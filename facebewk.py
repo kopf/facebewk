@@ -8,8 +8,8 @@ class Client(object):
         self.access_token = access_token
 
     def get(self, id):
-        print 'fetching for %s' % id
-        return json.loads(requests.get('https://graph.facebook.com/%s?access_token=%s' %(id, self.access_token)).content)
+        raw_data = requests.get('https://graph.facebook.com/{0}?access_token={1}'.format(id, self.access_token)).content
+        return FacebookObject(json.loads(raw_data), fetched=True)
 
 
 class FacebookObject(object):
@@ -23,8 +23,7 @@ class FacebookObject(object):
     def __getattr__(self, name):
         if hasattr(self, 'id') and not self.__fetched__:
             client = Client('AAAFEAjFZCzHUBALPONCwLZA2GBXIkm1joYkB0rZANqbcU83iILOzwexL5DreZAJcCBxRiorhZC6JlUY6fDZANyGxKcIzKzVEtk9G1psiHZB1gZDZD')
-            self.__dict__ = FacebookObject(client.get(self.id)).__dict__
-            self.__dict__['__fetched__'] = True
+            self.__dict__ = FacebookObject(client.get(self.id), fetched=True).__dict__
             return self.__getattribute__(name)
         raise AttributeError("'FacebookObject' object has no attribute '{0}'".format(name))
 
