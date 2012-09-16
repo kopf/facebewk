@@ -13,18 +13,20 @@ class Client(object):
 
 
 class FacebookObject(object):
-    def __init__(self, obj):
+    def __init__(self, obj, fetched=False):
+        self.__fetched__ = fetched
         if isinstance(obj, basestring):
             obj = json.loads(obj)
         for key in obj:
             setattr(self, key, self._process_datapoint(obj[key]))
 
     def __getattr__(self, name):
-        if hasattr(self, 'id'):
+        if hasattr(self, 'id') and not self.__fetched__:
             client = Client('AAAFEAjFZCzHUBALPONCwLZA2GBXIkm1joYkB0rZANqbcU83iILOzwexL5DreZAJcCBxRiorhZC6JlUY6fDZANyGxKcIzKzVEtk9G1psiHZB1gZDZD')
             self.__dict__ = FacebookObject(client.get(self.id)).__dict__
+            self.__dict__['__fetched__'] = True
             return self.__getattribute__(name)
-        raise AttributeError
+        raise AttributeError("'FacebookObject' object has no attribute '{0}'".format(name))
 
     def _process_datapoint(self, data):
         if isinstance(data, list):
@@ -34,5 +36,8 @@ class FacebookObject(object):
                 data = FacebookObject(data)
             else:
                 for key in data:
+                    #if key in ['likes', 'comments']:
+                    #    data[key] = self._process_datapoint(data[key].get('data', []))
+                    #else:
                     data[key] = self._process_datapoint(data[key])
         return data
