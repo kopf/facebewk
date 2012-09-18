@@ -8,23 +8,30 @@ class Client(object):
     def __init__(self, access_token):
         self.access_token = access_token
 
-    def get(self, id, params=None):
+    def get(self, id, params=None, path=None):
         """Make a GET request to the Graph API, return a Node object"""
-        if params is None:
-            params = {}
-        fetched = True
-        if 'fields' in params:
-            fetched = False
+        if path:
+            retval = self._get(None, {}, path=path)
+        else:
+            if params is None:
+                params = {}
+            fetched = True
+            if 'fields' in params:
+                fetched = False
 
-        params.setdefault('access_token', self.access_token)
-        retval = self._get(id, params)
+            params.setdefault('access_token', self.access_token)
+            retval = self._get(id, params)
         if 'error' in retval:
             raise ServerSideException(retval['error'].get('message'))
         return Node(retval, self, fetched=fetched)
 
-    def _get(self, id, params):
+    def _get(self, id, params, path=None):
         """Make a GET request to the Graph API, return a JSON object"""
-        url = 'https://graph.facebook.com/{0}?{1}'.format(id, urlencode(params))
+        url = 'https://graph.facebook.com'
+        if path:
+            url += path
+        else:
+            url += '/{0}?{1}'.format(id, urlencode(params))
         raw_data = requests.get(url).content
         return json.loads(raw_data)
 
