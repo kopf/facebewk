@@ -1,0 +1,3 @@
+* rename FacebookObject to "Node"
+* pass client=self, set self.__client__ = client
+* display "Node: id" instead of <facebewk.Node object at asdjksad> when inspecting
