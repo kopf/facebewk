@@ -26,9 +26,17 @@ class Node(object):
             self.__dict__ = Node(self.__client__.get(self.id), self.__client__, fetched=True).__dict__
             if name in self.__dict__:
                 return self.__getattribute__(name)
-        if 'type' in self.__dict__:
-            raise AttributeError("Node of type '{0}' has no attribute '{1}'".format(self.type, name))
-        raise AttributeError("Node has no attribute '{0}'".format(name))
+
+            if 'type' in self.__dict__:
+                msg = "Node {0} of type '{1}' has no attribute '{2}'".format(self.id, self.type, name)
+            else:
+                msg = "Node {0} has no attribute '{1}'".format(self.id, name)
+        else:
+            if 'type' in self.__dict__:
+                msg = "Node of type '{0}' has no attribute '{1}'".format(self.type, name)
+            else:
+                msg = "Node has no attribute '{0}'".format(name)
+        raise AttributeError(msg)
 
     def __repr__(self):
         if 'type' in self.__dict__:
