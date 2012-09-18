@@ -12,8 +12,9 @@ class Client(object):
         return json.loads(raw_data)
 
 
-class FacebookObject(object):
-    def __init__(self, obj, fetched=False):
+class Node(object):
+    def __init__(self, obj, client, fetched=False):
+        self.__client__ = client
         self.__fetched__ = fetched
         if isinstance(obj, basestring):
             obj = json.loads(obj)
@@ -22,21 +23,21 @@ class FacebookObject(object):
 
     def __getattr__(self, name):
         if hasattr(self, 'id') and not self.__fetched__:
-            client = Client('AAAFEAjFZCzHUBALPONCwLZA2GBXIkm1joYkB0rZANqbcU83iILOzwexL5DreZAJcCBxRiorhZC6JlUY6fDZANyGxKcIzKzVEtk9G1psiHZB1gZDZD')
-            self.__dict__ = FacebookObject(client.get(self.id), fetched=True).__dict__
-            return self.__getattribute__(name)
-        raise AttributeError("'FacebookObject' object has no attribute '{0}'".format(name))
+            self.__dict__ = Node(self.__client__.get(self.id), self.__client__, fetched=True).__dict__
+            if name in self.__dict__:
+                return self.__getattribute__(name)
+        if 'type' in self.__dict__:
+            raise AttributeError("Node of type '{0}' has no attribute '{1}'".format(self.type, name))
+        else:
+            raise AttributeError("Node has no attribute '{0}'".format(name))
 
     def _process_datapoint(self, data):
         if isinstance(data, list):
             data = [self._process_datapoint(entry) for entry in data]
         elif isinstance(data, dict):
             if 'id' in data:
-                data = FacebookObject(data)
+                data = Node(data, self.__client__)
             else:
                 for key in data:
-                    #if key in ['likes', 'comments']:
-                    #    data[key] = self._process_datapoint(data[key].get('data', []))
-                    #else:
                     data[key] = self._process_datapoint(data[key])
         return data
