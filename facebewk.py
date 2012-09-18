@@ -28,8 +28,12 @@ class Node(object):
                 return self.__getattribute__(name)
         if 'type' in self.__dict__:
             raise AttributeError("Node of type '{0}' has no attribute '{1}'".format(self.type, name))
-        else:
-            raise AttributeError("Node has no attribute '{0}'".format(name))
+        raise AttributeError("Node has no attribute '{0}'".format(name))
+
+    def __repr__(self):
+        if 'type' in self.__dict__:
+            return "<Facebook Node {0} of type {1}>".format(self.id, self.type)
+        return "<Facebook Node {0}>".format(self.id)
 
     def _process_datapoint(self, data):
         if isinstance(data, list):
