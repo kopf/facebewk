@@ -1,4 +1,5 @@
 import json
+from urllib import urlencode
 
 import requests
 
@@ -7,13 +8,34 @@ class Client(object):
     def __init__(self, access_token):
         self.access_token = access_token
 
-    def get(self, id):
-        raw_data = requests.get('https://graph.facebook.com/{0}?access_token={1}'.format(id, self.access_token)).content
+    def get(self, id, params=None):
+        """Make a GET request to the Graph API, return a Node object"""
+        if params is None:
+            params = {}
+        fetched = True
+        if 'fields' in params:
+            fetched = False
+
+        params.setdefault('access_token', self.access_token)
+        retval = self._get(id, params)
+        if 'error' in retval:
+            raise ServerSideException(retval['error'].get('message'))
+        return Node(retval, self, fetched=fetched)
+
+    def _get(self, id, params):
+        """Make a GET request to the Graph API, return a JSON object"""
+        url = 'https://graph.facebook.com/{0}?{1}'.format(id, urlencode(params))
+        raw_data = requests.get(url).content
         return json.loads(raw_data)
 
 
 class Node(object):
     def __init__(self, obj, client, fetched=False):
+        """Accepts:
+        obj: JSON-parsed response from Graph API
+        client: facebewk.Client object
+        fetched: Whether the entire object has been fetched
+        """
         self.__client__ = client
         self.__fetched__ = fetched
         if isinstance(obj, basestring):
@@ -22,8 +44,13 @@ class Node(object):
             setattr(self, key, self._process_datapoint(obj[key]))
 
     def __getattr__(self, name):
+        """Executed when a non-existant Node attribute is accessed.
+        If we haven't already fetched the full Node, then fetch it
+        and try again to return the attribute.
+        Otherwise raise an AttributeError.
+        """
         if hasattr(self, 'id') and not self.__fetched__:
-            self.__dict__ = Node(self.__client__.get(self.id), self.__client__, fetched=True).__dict__
+            self.__dict__ = self.__client__.get(self.id).__dict__
             if name in self.__dict__:
                 return self.__getattribute__(name)
 
@@ -44,6 +71,9 @@ class Node(object):
         return "<Facebook Node {0}>".format(self.id)
 
     def _process_datapoint(self, data):
+        """Process raw data from facebook, recursively if necessary, 
+        producing Node objects where possible.
+        """
         if isinstance(data, list):
             data = [self._process_datapoint(entry) for entry in data]
         elif isinstance(data, dict):
@@ -53,3 +83,7 @@ class Node(object):
                 for key in data:
                     data[key] = self._process_datapoint(data[key])
         return data
+
+
+class ServerSideException(Exception):
+    pass
