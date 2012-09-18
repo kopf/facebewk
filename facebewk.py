@@ -35,6 +35,14 @@ class Client(object):
         raw_data = requests.get(url).content
         return json.loads(raw_data)
 
+    def post(self, id, params):
+        """Publish a post or comment to the Graph API"""
+        params.setdefault('access_token', self.access_token)
+        url = 'https://graph.facebook.com'
+        url += '/{0}/feed'.format(id)
+        raw_data = requests.post(url, params)
+        return json.loads(raw_data.content)
+
 
 class Node(object):
     def __init__(self, obj, client, fetched=False):
@@ -62,7 +70,8 @@ class Node(object):
                 return self.__getattribute__(name)
 
             if 'type' in self.__dict__:
-                msg = "Node {0} of type '{1}' has no attribute '{2}'".format(self.id, self.type, name)
+                msg = "Node {0} of type '{1}' has no attribute '{2}'".format(self.id,
+                    self.type, name)
             else:
                 msg = "Node {0} has no attribute '{1}'".format(self.id, name)
         else:
