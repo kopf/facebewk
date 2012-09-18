@@ -9,7 +9,7 @@ class Client(object):
 
     def get(self, id):
         raw_data = requests.get('https://graph.facebook.com/{0}?access_token={1}'.format(id, self.access_token)).content
-        return FacebookObject(json.loads(raw_data), fetched=True)
+        return json.loads(raw_data)
 
 
 class FacebookObject(object):
