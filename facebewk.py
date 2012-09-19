@@ -8,18 +8,22 @@ class Client(object):
     def __init__(self, access_token):
         self.access_token = access_token
 
-    def get(self, id, params=None, path=None):
+    def get(self, id=None, params=None, path=None):
         """Make a GET request to the Graph API, return a Node object"""
+        if not id and not path:
+            raise Exception('Either a Node ID or URL path must be specified.')
+        fetched = True
+        if params is None:
+            params = {}
+        if path and not 'access_token' in path:
+            params.setdefault('access_token', self.access_token)
+
         if path:
-            retval = self._get(None, {}, path=path)
+            retval = self._get(None, params, path=path)
         else:
-            if params is None:
-                params = {}
-            fetched = True
             if 'fields' in params:
                 fetched = False
 
-            params.setdefault('access_token', self.access_token)
             retval = self._get(id, params)
         if 'error' in retval:
             raise ServerSideException(retval['error'].get('message'))
