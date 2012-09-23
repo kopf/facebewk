@@ -1,5 +1,6 @@
 import json
 from urllib import urlencode
+from urlparse import urljoin
 
 import requests
 
@@ -15,7 +16,7 @@ class Client(object):
         fetched = True
         if params is None:
             params = {}
-        if path and not 'access_token' in path:
+        if not path or (path and not 'access_token' in path):
             params.setdefault('access_token', self.access_token)
 
         if path:
@@ -23,7 +24,6 @@ class Client(object):
         else:
             if 'fields' in params:
                 fetched = False
-
             retval = self._get(id, params)
         if 'error' in retval:
             raise ServerSideException(retval['error'].get('message'))
@@ -31,19 +31,35 @@ class Client(object):
 
     def _get(self, id, params, path=None):
         """Make a GET request to the Graph API, return a JSON object"""
-        url = 'https://graph.facebook.com'
+        url = 'https://graph.facebook.com/'
         if path:
-            url += path
+            url = urljoin(url, path)
         else:
-            url += '/{0}?{1}'.format(id, urlencode(params))
+            url = urljoin(url, '/{0}?{1}'.format(id, urlencode(params)))
         raw_data = requests.get(url).content
         return json.loads(raw_data)
 
-    def post(self, id, params):
+    def post(self, node, params):
         """Publish a post or comment to the Graph API"""
+        post.setdefault('access_token', self.access_token)
+        url = 'https://graph.facebook.com/{0}/'.format(node.id)
+        try:
+            if node.type in ['post', 'status', 'link']:
+                url = urljoin(url, 'comments')
+            else:
+                url = urljoin(url, 'feed')
+        except AttributeError:
+            url = urljoin(url, 'feed')
+        retval = json.loads(requests.post(url, post).content)
+        if 'error' in retval:
+            raise ServerSideException(retval['error'].get('message'))
+        return Node(retval, self, fetched=False)
+
+    def like(self, node, params=None):
+        if not params:
+            params = {}
         params.setdefault('access_token', self.access_token)
-        url = 'https://graph.facebook.com'
-        url += '/{0}/feed'.format(id)
+        url = 'https://graph.facebook.com/{0}/likes/'.format(node.id)
         raw_data = requests.post(url, params)
         return json.loads(raw_data.content)
 
@@ -87,7 +103,7 @@ class Node(object):
 
     def __repr__(self):
         if 'type' in self.__dict__:
-            return "<Facebook Node {0} of type {1}>".format(self.id, self.type)
+            return "<Facebook Node {0} of type '{1}'>".format(self.id, self.type)
         return "<Facebook Node {0}>".format(self.id)
 
     def _process_datapoint(self, data):
