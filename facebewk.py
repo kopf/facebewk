@@ -37,7 +37,6 @@ class Client(object):
                 url = '{0}{1}?{2}'.format(BASE_URL, path, urlencode(params))
         else:
             url = '{0}/{1}?{2}'.format(BASE_URL, id, urlencode(params))
-        print url
         raw_data = requests.get(url).content
         return json.loads(raw_data)
 
@@ -65,6 +64,13 @@ class Client(object):
         raw_data = requests.post(url, params)
         return json.loads(raw_data.content)
 
+    def get_newsfeed(self, params=None):
+        if not params:
+            params = {}
+        params.setdefault('access_token', self.access_token)
+        data = self._get(None, params, path='/me/home')
+        return Node._process_datapoint(data, self)
+
 
 class Node(object):
     def __init__(self, obj, client, fetched=False):
@@ -78,7 +84,7 @@ class Node(object):
         if isinstance(obj, basestring):
             obj = json.loads(obj)
         for key in obj:
-            setattr(self, key, self._process_datapoint(obj[key]))
+            setattr(self, key, self._process_datapoint(obj[key], self.__client__))
 
     def __getattr__(self, name):
         """Executed when a non-existant Node attribute is accessed.
@@ -111,18 +117,19 @@ class Node(object):
         else:
             return "<Facebook Node>"
 
-    def _process_datapoint(self, data):
-        """Process raw data from facebook, recursively if necessary, 
+    @classmethod
+    def _process_datapoint(node, data, client):
+        """Process json data from facebook, recursively if necessary, 
         producing Node objects where possible.
         """
         if isinstance(data, list):
-            data = [self._process_datapoint(entry) for entry in data]
+            data = [node._process_datapoint(entry, client) for entry in data]
         elif isinstance(data, dict):
             if 'id' in data:
-                data = Node(data, self.__client__)
+                data = Node(data, client)
             else:
                 for key in data:
-                    data[key] = self._process_datapoint(data[key])
+                    data[key] = node._process_datapoint(data[key], client)
         return data
 
 
