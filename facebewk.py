@@ -1,9 +1,9 @@
 import json
 from urllib import urlencode
-from urlparse import urljoin
 
 import requests
 
+BASE_URL = 'https://graph.facebook.com'
 
 class Client(object):
     def __init__(self, access_token):
@@ -16,8 +16,7 @@ class Client(object):
         fetched = True
         if params is None:
             params = {}
-        if not path or (path and not 'access_token' in path):
-            params.setdefault('access_token', self.access_token)
+        params.setdefault('access_token', self.access_token)
 
         if path:
             retval = self._get(None, params, path=path)
@@ -31,25 +30,28 @@ class Client(object):
 
     def _get(self, id, params, path=None):
         """Make a GET request to the Graph API, return a JSON object"""
-        url = 'https://graph.facebook.com/'
         if path:
-            url = urljoin(url, path)
+            if BASE_URL in path:
+                url = '{0}{1}'.format(path, urlencode(params))
+            else:
+                url = '{0}{1}?{2}'.format(BASE_URL, path, urlencode(params))
         else:
-            url = urljoin(url, '/{0}?{1}'.format(id, urlencode(params)))
+            url = '{0}/{1}?{2}'.format(BASE_URL, id, urlencode(params))
+        print url
         raw_data = requests.get(url).content
         return json.loads(raw_data)
 
     def post(self, node, params):
         """Publish a post or comment to the Graph API"""
         post.setdefault('access_token', self.access_token)
-        url = 'https://graph.facebook.com/{0}/'.format(node.id)
+        url = '{0}/{1}/'.format(BASE_URL, node.id)
         try:
             if node.type in ['post', 'status', 'link']:
-                url = urljoin(url, 'comments')
+                url += 'comments'
             else:
-                url = urljoin(url, 'feed')
+                url += 'feed'
         except AttributeError:
-            url = urljoin(url, 'feed')
+            url += 'feed'
         retval = json.loads(requests.post(url, post).content)
         if 'error' in retval:
             raise ServerSideException(retval['error'].get('message'))
@@ -59,7 +61,7 @@ class Client(object):
         if not params:
             params = {}
         params.setdefault('access_token', self.access_token)
-        url = 'https://graph.facebook.com/{0}/likes/'.format(node.id)
+        url = '{0}/{1}/likes/'.format(BASE_URL, node.id)
         raw_data = requests.post(url, params)
         return json.loads(raw_data.content)
 
@@ -104,7 +106,10 @@ class Node(object):
     def __repr__(self):
         if 'type' in self.__dict__:
             return "<Facebook Node {0} of type '{1}'>".format(self.id, self.type)
-        return "<Facebook Node {0}>".format(self.id)
+        elif 'id' in self.__dict__:
+            return "<Facebook Node {0}>".format(self.id)
+        else:
+            return "<Facebook Node>"
 
     def _process_datapoint(self, data):
         """Process raw data from facebook, recursively if necessary, 
