@@ -1,6 +1,4 @@
 import json
-from urllib import urlencode
-import urlparse
 
 import requests
 
@@ -14,10 +12,8 @@ class Client(object):
         """Make a GET request to the Graph API, return a Node object"""
         if not id and not path:
             raise Exception('Either a Node ID or URL path must be specified.')
+        params = self._sanitize_params(params)
         fetched = True
-        if params is None:
-            params = {}
-        params.setdefault('access_token', self.access_token)
 
         if path:
             retval = self._get(None, params, path=path)
@@ -30,26 +26,18 @@ class Client(object):
     def _get(self, id, params, path=None):
         """Make a GET request to the Graph API, return a JSON object"""
         if path:
-            url_parts = list(urlparse.urlparse(path))
-            base_url = list(urlparse.urlparse(BASE_URL))
-            for i in range(0, 2):
-                url_parts[i] = base_url[i]
-            qsl = urlparse.parse_qs(url_parts[4])
-            qsl.update(params)
-            url_parts[4] = urlencode([(key, qsl[key]) for key in qsl])
-            url = urlparse.urlunparse(url_parts)
+            url = '{0}{1}'.format(BASE_URL, path)
         else:
-            url = '{0}/{1}?{2}'.format(BASE_URL, id, urlencode(params))
-        raw_data = requests.get(url).content
-        retval = json.loads(raw_data)
+            url = '{0}/{1}'.format(BASE_URL, id)
+        retval = requests.get(url, params=params).json
         if 'error' in retval:
             raise ServerSideException(retval['error'].get('message'))
-        return json.loads(raw_data)
+        return retval
 
     def post(self, node, params):
         """Publish a post or comment to the Graph API"""
-        params.setdefault('access_token', self.access_token)
-        url = '{0}/{1}/'.format(BASE_URL, node.id)
+        params = self._sanitize_params(params)
+        url = '{0}/{1}'.format(BASE_URL, node.id)
         try:
             if node.type in ['post', 'status', 'link']:
                 url += 'comments'
@@ -57,25 +45,31 @@ class Client(object):
                 url += 'feed'
         except AttributeError:
             url += 'feed'
-        retval = json.loads(requests.post(url, params).content)
+        
+        url += '?access_token={0}'.format(self.access_token)
+        retval = requests.post(url, data=params).json
         if 'error' in retval:
             raise ServerSideException(retval['error'].get('message'))
         return Node(retval, self, fetched=False)
 
     def like(self, node, params=None):
-        if not params:
-            params = {}
-        params.setdefault('access_token', self.access_token)
+        params = self._sanitize_params(params)
         url = '{0}/{1}/likes/'.format(BASE_URL, node.id)
-        raw_data = requests.post(url, params)
-        return json.loads(raw_data.content)
+        retval = requests.post(url, data=params).json
+        return retval
 
     def get_newsfeed(self, params=None):
-        if not params:
-            params = {}
-        params.setdefault('access_token', self.access_token)
+        params = self._sanitize_params(params)
         data = self._get(None, params, path='/me/home')
         return Node._process_datapoint(data, self)
+
+    def _sanitize_params(self, params):
+        if not params:
+            params = {}
+        for key in params:
+            params[key] = json.dumps(params[key])
+        params.setdefault('access_token', self.access_token)
+        return params
 
 
 class Node(object):
