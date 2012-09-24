@@ -48,7 +48,7 @@ class Client(object):
 
     def post(self, node, params):
         """Publish a post or comment to the Graph API"""
-        post.setdefault('access_token', self.access_token)
+        params.setdefault('access_token', self.access_token)
         url = '{0}/{1}/'.format(BASE_URL, node.id)
         try:
             if node.type in ['post', 'status', 'link']:
@@ -57,7 +57,7 @@ class Client(object):
                 url += 'feed'
         except AttributeError:
             url += 'feed'
-        retval = json.loads(requests.post(url, post).content)
+        retval = json.loads(requests.post(url, params).content)
         if 'error' in retval:
             raise ServerSideException(retval['error'].get('message'))
         return Node(retval, self, fetched=False)
