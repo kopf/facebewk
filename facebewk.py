@@ -1,5 +1,6 @@
 import json
 from urllib import urlencode
+import urlparse
 
 import requests
 
@@ -24,20 +25,25 @@ class Client(object):
             if 'fields' in params:
                 fetched = False
             retval = self._get(id, params)
-        if 'error' in retval:
-            raise ServerSideException(retval['error'].get('message'))
         return Node(retval, self, fetched=fetched)
 
     def _get(self, id, params, path=None):
         """Make a GET request to the Graph API, return a JSON object"""
         if path:
-            if BASE_URL in path:
-                url = '{0}{1}'.format(path, urlencode(params))
-            else:
-                url = '{0}{1}?{2}'.format(BASE_URL, path, urlencode(params))
+            url_parts = list(urlparse.urlparse(path))
+            base_url = list(urlparse.urlparse(BASE_URL))
+            for i in range(0, 2):
+                url_parts[i] = base_url[i]
+            qsl = urlparse.parse_qs(url_parts[4])
+            qsl.update(params)
+            url_parts[4] = urlencode([(key, qsl[key]) for key in qsl])
+            url = urlparse.urlunparse(url_parts)
         else:
             url = '{0}/{1}?{2}'.format(BASE_URL, id, urlencode(params))
         raw_data = requests.get(url).content
+        retval = json.loads(raw_data)
+        if 'error' in retval:
+            raise ServerSideException(retval['error'].get('message'))
         return json.loads(raw_data)
 
     def post(self, node, params):
