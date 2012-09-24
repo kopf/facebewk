@@ -79,6 +79,9 @@ class Client(object):
         return params
 
     def _check_error(self, data):
+        """Check for errors returned by the Graph API.
+        data: should be a dictionary, or at least iterable.
+        """
         if 'error' in data:
             raise ServerSideException(retval['error'].get('message'))
 
@@ -104,7 +107,7 @@ class Node(object):
         Otherwise raise an AttributeError.
         """
         if hasattr(self, 'id') and not self.__fetched__:
-            self.__dict__ = self.__client__.get(self.id).__dict__
+            self.refresh() # this will automatically grab all node data
             if name in self.__dict__:
                 return self.__getattribute__(name)
 
@@ -127,6 +130,11 @@ class Node(object):
             return "<Facebook Node {0}>".format(self.id)
         else:
             return "<Facebook Node>"
+
+    def refresh(self):
+        """Refresh a node's data"""
+        self.__dict__ = self.__client__.get(self.id).__dict__
+
 
     @classmethod
     def _process_datapoint(node, data, client):
