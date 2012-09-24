@@ -6,6 +6,9 @@ BASE_URL = 'https://graph.facebook.com'
 
 class Client(object):
     def __init__(self, access_token):
+        """Accepts:
+        access_token: an access token for an authenticated session
+        """
         self.access_token = access_token
 
     def get(self, id=None, params=None, path=None):
@@ -30,14 +33,13 @@ class Client(object):
         else:
             url = '{0}/{1}'.format(BASE_URL, id)
         retval = requests.get(url, params=params).json
-        if 'error' in retval:
-            raise ServerSideException(retval['error'].get('message'))
+        self._check_error(retval)
         return retval
 
     def post(self, node, params):
         """Publish a post or comment to the Graph API"""
         params = self._sanitize_params(params)
-        url = '{0}/{1}'.format(BASE_URL, node.id)
+        url = '{0}/{1}/'.format(BASE_URL, node.id)
         try:
             if node.type in ['post', 'status', 'link']:
                 url += 'comments'
@@ -48,28 +50,37 @@ class Client(object):
         
         url += '?access_token={0}'.format(self.access_token)
         retval = requests.post(url, data=params).json
-        if 'error' in retval:
-            raise ServerSideException(retval['error'].get('message'))
+        self._check_error(retval)
         return Node(retval, self, fetched=False)
 
     def like(self, node, params=None):
+        """'Like' a Node (post, link, comment, etc)"""
         params = self._sanitize_params(params)
         url = '{0}/{1}/likes/'.format(BASE_URL, node.id)
         retval = requests.post(url, data=params).json
+        # successful 'like' operation should always return True:
+        if retval is not True:
+            self._check_error(retval)
         return retval
 
     def get_newsfeed(self, params=None):
+        """Retrieve the user's newsfeed"""
         params = self._sanitize_params(params)
         data = self._get(None, params, path='/me/home')
         return Node._process_datapoint(data, self)
 
     def _sanitize_params(self, params):
+        """Set default parameters, sanitize for a possible POST operation"""
         if not params:
             params = {}
         for key in params:
             params[key] = json.dumps(params[key])
         params.setdefault('access_token', self.access_token)
         return params
+
+    def _check_error(self, data):
+        if 'error' in data:
+            raise ServerSideException(retval['error'].get('message'))
 
 
 class Node(object):
