@@ -11,28 +11,31 @@ class Client(object):
         """
         self.access_token = access_token
 
-    def get(self, id=None, params=None, path=None):
+    def get(self, id=None, params=None, url=None):
         """Make a GET request to the Graph API, return a Node object"""
-        if not id and not path:
-            raise Exception('Either a Node ID or URL path must be specified.')
+        if not id and not url:
+            raise Exception('Either a Node ID or absolute URL must be specified.')
         params = self._sanitize_params(params)
         fetched = True
 
-        if path:
-            retval = self._get(None, params, path=path)
+        if url:
+            retval = self._get(None, params, full_url=url)
         else:
             if 'fields' in params:
                 fetched = False
             retval = self._get(id, params)
-        return Node(retval, self, fetched=fetched)
-
-    def _get(self, id, params, path=None):
-        """Make a GET request to the Graph API, return a JSON object"""
-        if path:
-            url = '{0}{1}'.format(BASE_URL, path)
+        if 'id' in retval:
+            return Node(retval, self, fetched=fetched)
         else:
-            url = '{0}/{1}'.format(BASE_URL, id)
-        retval = requests.get(url, params=params).json
+            return Node._process_datapoint(retval, self)
+
+    def _get(self, id, params, full_url=None):
+        """Make a GET request to the Graph API, return a JSON object"""
+        if full_url:
+            retval = requests.get(full_url, params=params).json
+        else:
+            retval = requests.get('{0}/{1}'.format(BASE_URL, id),
+                                  params=params).json
         self._check_error(retval)
         return retval
 
@@ -63,12 +66,6 @@ class Client(object):
             self._check_error(retval)
         return retval
 
-    def get_newsfeed(self, params=None):
-        """Retrieve the user's newsfeed"""
-        params = self._sanitize_params(params)
-        data = self._get(None, params, path='/me/home')
-        return Node._process_datapoint(data, self)
-
     def _sanitize_params(self, params):
         """Set default parameters, sanitize for a possible POST operation"""
         if not params:
@@ -83,7 +80,7 @@ class Client(object):
         data: should be a dictionary, or at least iterable.
         """
         if 'error' in data:
-            raise ServerSideException(retval['error'].get('message'))
+            raise ServerSideException(data['error'].get('message'))
 
 
 class Node(object):
@@ -134,7 +131,6 @@ class Node(object):
     def refresh(self):
         """Refresh a node's data"""
         self.__dict__ = self.__client__.get(self.id).__dict__
-
 
     @classmethod
     def _process_datapoint(node, data, client):
