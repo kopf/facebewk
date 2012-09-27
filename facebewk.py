@@ -3,6 +3,7 @@ import json
 import requests
 
 BASE_URL = 'https://graph.facebook.com'
+NO_FRIENDS = {'value': 'CUSTOM', 'networks': 1, 'friends': 'NO_FRIENDS'}
 
 class Client(object):
     def __init__(self, access_token):
