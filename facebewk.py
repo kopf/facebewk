@@ -71,7 +71,8 @@ class Client(object):
         if not params:
             params = {}
         for key in params:
-            params[key] = json.dumps(params[key])
+            if type(key) in [list, dict]:
+                params[key] = json.dumps(params[key])
         params.setdefault('access_token', self.access_token)
         return params
 
