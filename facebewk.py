@@ -1,3 +1,4 @@
+import copy
 import json
 
 import requests
@@ -43,13 +44,10 @@ class Client(object):
     def post(self, node, params):
         """Publish a post or comment to the Graph API"""
         params = self._sanitize_params(params)
-        url = '{0}/{1}/'.format(BASE_URL, node.id)
-        try:
-            if node.type in ['post', 'status', 'link']:
-                url += 'comments'
-            else:
-                url += 'feed'
-        except AttributeError:
+        url = '{0}/{1}/'.format(BASE_URL, node['id'])
+        if node.get('type') in ['post', 'status', 'link']:
+            url += 'comments'
+        else:
             url += 'feed'
         
         url += '?access_token={0}'.format(self.access_token)
@@ -60,7 +58,7 @@ class Client(object):
     def like(self, node, params=None):
         """'Like' a Node (post, link, comment, etc)"""
         params = self._sanitize_params(params)
-        url = '{0}/{1}/likes/'.format(BASE_URL, node.id)
+        url = '{0}/{1}/likes/'.format(BASE_URL, node['id'])
         retval = requests.post(url, data=params).json
         # successful 'like' operation should always return True:
         if retval is not True:
@@ -72,7 +70,7 @@ class Client(object):
         if not params:
             params = {}
         for key in params:
-            if type(key) in [list, dict]:
+            if type(params[key]) in [list, dict]:
                 params[key] = json.dumps(params[key])
         params.setdefault('access_token', self.access_token)
         return params
@@ -85,54 +83,53 @@ class Client(object):
             raise ServerSideException(data['error'].get('message'))
 
 
-class Node(object):
+class Node(dict):
     def __init__(self, obj, client, fetched=False):
         """Accepts:
         obj: JSON-parsed response from Graph API
         client: facebewk.Client object
         fetched: Whether the entire object has been fetched
         """
-        self.__client__ = client
-        self.__fetched__ = fetched
+        self['__client__'] = client
+        self['__fetched__'] = fetched
         if isinstance(obj, basestring):
             obj = json.loads(obj)
+        if 'id' not in obj:
+            raise KeyError('All Nodes must have an ID')
         for key in obj:
-            setattr(self, key, self._process_datapoint(obj[key], self.__client__))
+            self[key] = self._process_datapoint(obj[key], client)
 
-    def __getattr__(self, name):
-        """Executed when a non-existant Node attribute is accessed.
-        If we haven't already fetched the full Node, then fetch it
-        and try again to return the attribute.
-        Otherwise raise an AttributeError.
+    def __getitem__(self, key):
+        """Try to return the value for a certain key, and if missing:
+        Fetch the whole Node if we haven't already and try again.
+        Otherwise raise an KeyError.
         """
-        if hasattr(self, 'id') and not self.__fetched__:
-            self.refresh() # this will automatically grab all node data
-            if name in self.__dict__:
-                return self.__getattribute__(name)
+        try:
+            return dict.__getitem__(self, key)
+        except KeyError:
+            if not self['__fetched__']:
+                self.refresh() # this will automatically grab all node data
+                if key in self:
+                    return self[key]
 
-            if 'type' in self.__dict__:
-                msg = "Node {0} of type '{1}' has no attribute '{2}'".format(self.id,
-                    self.type, name)
+            if 'type' in self:
+                msg = "Node {0} of type '{1}' has no key '{2}'".format(
+                    self['id'], self['type'], key)
             else:
-                msg = "Node {0} has no attribute '{1}'".format(self.id, name)
-        else:
-            if 'type' in self.__dict__:
-                msg = "Node of type '{0}' has no attribute '{1}'".format(self.type, name)
-            else:
-                msg = "Node has no attribute '{0}'".format(name)
-        raise AttributeError(msg)
+                msg = "Node {0} has no key '{1}'".format(self['id'], key)
+            raise KeyError(msg)
 
     def __repr__(self):
-        if 'type' in self.__dict__:
-            return "<Facebook Node {0} of type '{1}'>".format(self.id, self.type)
-        elif 'id' in self.__dict__:
-            return "<Facebook Node {0}>".format(self.id)
-        else:
-            return "<Facebook Node>"
+        """Clean __client__ objects from the __repr__() output"""
+        clean = copy.copy(self)
+        del clean['__client__']
+        return dict.__repr__(clean)
 
     def refresh(self):
         """Refresh a node's data"""
-        self.__dict__ = self.__client__.get(self.id).__dict__
+        full_node = self['__client__'].get(self['id'])
+        for key in full_node:
+            self[key] = full_node[key]
 
     @classmethod
     def _process_datapoint(node, data, client):
