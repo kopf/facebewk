@@ -3,8 +3,9 @@ import json
 
 import requests
 
+
 BASE_URL = 'https://graph.facebook.com'
-NO_FRIENDS = {'value': 'CUSTOM', 'networks': 1, 'friends': 'NO_FRIENDS'}
+
 
 class Client(object):
     def __init__(self, access_token):
@@ -95,7 +96,7 @@ class Node(dict):
         if isinstance(obj, basestring):
             obj = json.loads(obj)
         if 'id' not in obj:
-            raise KeyError('All Nodes must have an ID')
+            raise KeyError('All Nodes must have an ID %s' % obj)
         for key in obj:
             self[key] = self._process_datapoint(obj[key], client)
 

@@ -1,0 +1,69 @@
+{
+  "id": "1000", 
+  "name": "Aengus Walton", 
+  "first_name": "Aengus", 
+  "last_name": "Walton", 
+  "link": "https://www.facebook.com/abcdef", 
+  "username": "abcdef", 
+  "birthday": "01/01/1986", 
+  "hometown": {
+    "id": "110769888951990", 
+    "name": "Dublin, Ireland"
+  }, 
+  "location": {
+    "id": "112089218817486", 
+    "name": "Stuttgart, Germany"
+  }, 
+  "bio": "", 
+  "quotes": "\"Jazz is not dead, it just smells funny\"\r\n    —Frank Zappa", 
+  "education": [
+    {
+      "school": {
+        "id": "104051856299176", 
+        "name": "Trinity College, Dublin"
+      }, 
+      "year": {
+        "id": "136328419721520", 
+        "name": "2009"
+      }, 
+      "concentration": [
+        {
+          "id": "181483841895065", 
+          "name": "Computer Science, Linguistics and German"
+        }
+      ], 
+      "type": "College"
+    }
+  ], 
+  "gender": "male", 
+  "interested_in": [
+    "female"
+  ], 
+  "relationship_status": "In a relationship", 
+  "significant_other": {
+    "name": "Another User", 
+    "id": "1001"
+  }, 
+  "religion": "Klang", 
+  "political": "Something or other", 
+  "email": "ventolin@gmail.com", 
+  "website": "http://ventolin.org", 
+  "timezone": 2, 
+  "locale": "en_GB", 
+  "languages": [
+    {
+      "id": "106059522759137", 
+      "name": "English"
+    }, 
+    {
+      "id": "105673612800327", 
+      "name": "German"
+    }, 
+    {
+      "id": "108175279203740", 
+      "name": "Irish"
+    }
+  ], 
+  "verified": true, 
+  "updated_time": "2012-09-13T16:23:09+0000"
+}
