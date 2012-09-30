@@ -46,6 +46,8 @@ class Client(object):
         """Publish a post or comment to the Graph API"""
         params = self._sanitize_params(params)
         url = '{0}/{1}/'.format(BASE_URL, node['id'])
+        if not node['__fetched__']:
+            node.refresh()
         if node.get('type') in ['post', 'status', 'link']:
             url += 'comments'
         else:
@@ -72,6 +74,15 @@ class Client(object):
     def unlike(self, node, params=None):
         """'Unlike' a Node"""
         return self.like(node, params, delete=True)
+
+    def delete(self, node, params=None):
+        """Delete a node from the Graph"""
+        params = self._sanitize_params(params)
+        url = '{0}/{1}/'.format(BASE_URL, node['id'])
+        retval = requests.delete(url, data=params).json
+        if retval is not True:
+            self._check_error(retval)
+        return retval
 
     def _sanitize_params(self, params):
         """Set default parameters, sanitize for a possible POST operation"""

@@ -27,10 +27,10 @@ class BaseTestCase(unittest.TestCase):
     access_token = 'access_token_blah'
     c = Client(access_token)
     default_params = {'access_token': access_token}
-    user_node = Node(_get_fixture(1000), None, fetched=True)
-    status_node = Node(_get_fixture('status_fetched'), None)
-    post_node = Node(_get_fixture('post_fetched'), None)
-    link_node = Node(_get_fixture('link_fetched'), None)
+    user_node = Node(_get_fixture(1000), c, fetched=True)
+    status_node = Node(_get_fixture('status_fetched'), c, fetched=True)
+    post_node = Node(_get_fixture('post_fetched'), c, fetched=True)
+    link_node = Node(_get_fixture('link_fetched'), c, fetched=True)
     message = {'message': 'an example post payload'}
     default_post_params = copy.copy(default_params)
     default_post_params['message'] = message['message']
@@ -166,6 +166,20 @@ class TestClient(BaseTestCase):
         with patch.object(requests, 'post') as mocked_post:
             mocked_post.return_value = _build_response_obj('error')
             self.assertRaises(ServerSideException, self.c.post, self.post_node, {})
+
+    def test_check_errors_called_in_delete(self):
+        """Should check for errors when deleting content on the graph if retval != True"""
+        with patch.object(requests, 'post') as mocked_post:
+            mocked_post.return_value = _build_response_obj('error')
+            self.assertRaises(ServerSideException, self.c.delete, self.post_node, {})
+
+    def test_check_errors_not_called_in_delete(self):
+        """Should not check for errors when deleting content from the graph if retval == True"""
+        with patch.object(requests, 'delete') as mocked_post:
+            mocked_post.return_value = _build_response_obj('like_success')
+            with patch.object(Client, '_check_error') as check_error:
+                self.c.delete(self.post_node)
+                self.assertFalse(check_error.called)
 
     def test_like_by_default_delete_if_specified(self):
         """Should like node by default but delete the like if delete=True in kwargs"""
