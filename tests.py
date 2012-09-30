@@ -167,6 +167,18 @@ class TestClient(BaseTestCase):
             mocked_post.return_value = _build_response_obj('error')
             self.assertRaises(ServerSideException, self.c.post, self.post_node, {})
 
+    def test_like_by_default_delete_if_specified(self):
+        """Should like node by default but delete the like if delete=True in kwargs"""
+        with patch.object(requests, 'post') as mocked_post:
+            mocked_post.return_value = _build_response_obj('like_success')
+            self.c.like(self.post_node)
+            self.assertTrue(mocked_post.called)
+
+        with patch.object(requests, 'delete') as mocked_post:
+            mocked_post.return_value = _build_response_obj('like_success')
+            self.c.like(self.post_node, delete=True)
+            self.assertTrue(mocked_post.called)
+
     def test_check_errors_called_in_like(self):
         """Should check for errors when liking content on the graph if retval != True"""
         with patch.object(requests, 'post') as mocked_post:
@@ -223,4 +235,3 @@ class TestNode(BaseTestCase):
             else:
                 self.assertEquals(1, 2)
 
-    
