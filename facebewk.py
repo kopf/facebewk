@@ -146,9 +146,7 @@ class Node(dict):
 
     def refresh(self):
         """Refresh a node's data"""
-        full_node = self['__client__'].get(self['id'])
-        for key in full_node:
-            self[key] = full_node[key]
+        self.update(self['__client__'].get(self['id']))
 
     @classmethod
     def _process_datapoint(node, data, client):
