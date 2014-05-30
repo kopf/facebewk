@@ -1,5 +1,7 @@
 # facebewk
 
+[![Build Status](https://travis-ci.org/kopf/facebewk.svg?branch=master)](https://travis-ci.org/kopf/facebewk)
+
 facebewk is a clever little Python wrapper for the facebook Graph API. 
 
 It is designed to minimise the number of HTTP requests, while providing a developer-friendly, dynamic representation of
