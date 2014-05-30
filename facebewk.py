@@ -35,10 +35,10 @@ class Client(object):
     def _get(self, id, params, full_url=None):
         """Make a GET request to the Graph API, return a JSON object"""
         if full_url:
-            retval = requests.get(full_url, params=params).json
+            retval = requests.get(full_url, params=params).json()
         else:
             retval = requests.get('{0}/{1}'.format(BASE_URL, id),
-                                  params=params).json
+                                  params=params).json()
         self._check_error(retval)
         return retval
 
@@ -54,7 +54,7 @@ class Client(object):
             url += 'feed'
         
         url += '?access_token={0}'.format(self.access_token)
-        retval = requests.post(url, data=params).json
+        retval = requests.post(url, data=params).json()
         self._check_error(retval)
         return Node(retval, self, fetched=False)
 
@@ -63,9 +63,9 @@ class Client(object):
         params = self._sanitize_params(params)
         url = '{0}/{1}/likes/'.format(BASE_URL, node['id'])
         if delete:
-            retval = requests.delete(url, data=params).json
+            retval = requests.delete(url, data=params).json()
         else:
-            retval = requests.post(url, data=params).json
+            retval = requests.post(url, data=params).json()
         # successful 'like' operation should always return True:
         if retval is not True:
             self._check_error(retval)
@@ -79,7 +79,7 @@ class Client(object):
         """Delete a node from the Graph"""
         params = self._sanitize_params(params)
         url = '{0}/{1}/'.format(BASE_URL, node['id'])
-        retval = requests.delete(url, data=params).json
+        retval = requests.delete(url, data=params).json()
         if retval is not True:
             self._check_error(retval)
         return retval
