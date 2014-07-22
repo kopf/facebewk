@@ -23,7 +23,7 @@ It can be fairly well summarised in the following interactive python session:
 
 ````python
 >>> from facebewk import Client
->>> c = Client('FACEBOOK_ACCESS_TOKEN')
+>>> c = Client('FACEBOOK_USER_ACCESS_TOKEN')
 >>> me = c.get('me')
 >>> type(me)
 <class 'facebewk.Node'>
