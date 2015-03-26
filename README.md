@@ -22,21 +22,28 @@ Then, get an API access token, create your Client object, and start querying!
 It can be fairly well summarised in the following interactive python session:
 
 ````python
+>>> # Start by creating a client with your user access token:
 >>> from facebewk import Client
 >>> c = Client('FACEBOOK_USER_ACCESS_TOKEN')
+>>> 
+>>> # This will create a Node object representing your profile:
 >>> me = c.get('me')
 >>> type(me)
 <class 'facebewk.Node'>
 >>> me['name']
 u'Aengus Walton'
->>> # facebewk has noticed that my 'hometown' is a link to another node on the facebook graph and treated it as such:
+>>> # facebewk has noticed that my 'hometown' is a link to another node on
+>>> # the facebook graph and treated it as such:
 >>> type(me['hometown'])
 <class 'facebewk.Node'>
 >>> # We still have relatively little information on it, though:
 >>> me['hometown']
 {'__fetched__': False, u'id': u'110769XXXXXXXXX', u'name': u'Dublin, Ireland'}
->>> # Referring to the facebook graph API documentation, we see we should be able to find the number of checkins in a town.
->>> # If we try to simply access it, a HTTP request will be automatically performed and we'll have the data:
+>>> 
+>>> # Referring to the facebook graph API documentation, we see we should be
+>>> # able to find the number of checkins in a town.
+>>> # If we try to simply access it, a HTTP request will be automatically
+>>> # performed and we'll have the data:
 >>> me['hometown']['checkins']
 16734
 >>> # We can see what effect this has had by inspecting the object again:
@@ -54,13 +61,17 @@ u'Aengus Walton'
 >>> type(newsfeed['data'])
 <type 'list'>
 >>>
->>> # Using facebewk, you can also create and alter data on the graph:
+>>> # Using facebewk, you can also create and alter data on the graph.
+>>> # Here, we'll make a post to the 'me' object (a facebook profile):
 >>> status_update = c.post(me, {'message': 'writing my blog post innit', 
 ...     'privacy': {'value': 'CUSTOM', 'networks': 1, 'friends': 'NO_FRIENDS'}})
 >>> status_update
 {'__fetched__': False, u'id': u'37300126_632748066014'}
 >>> status_update['message']
 u'writing my blog post innit'
+>>>
+>>> # Whereas making a post to a status update will result in
+>>> # a comment being posted to it:
 >>> my_comment = c.post(status_update, {'message': 'blablabla'})
 >>> c.like(my_comment)
 True
