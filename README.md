@@ -29,26 +29,32 @@ It can be fairly well summarised in the following interactive python session:
 <class 'facebewk.Node'>
 >>> me['name']
 u'Aengus Walton'
+>>> # facebewk has noticed that my 'hometown' is a link to another node on the facebook graph and treated it as such:
 >>> type(me['hometown'])
 <class 'facebewk.Node'>
+>>> # We still have relatively little information on it, though:
 >>> me['hometown']
 {'__fetched__': False, u'id': u'110769XXXXXXXXX', u'name': u'Dublin, Ireland'}
+>>> # Referring to the facebook graph API documentation, we see we should be able to find the number of checkins in a town.
+>>> # If we try to simply access it, a HTTP request will be automatically performed and we'll have the data:
 >>> me['hometown']['checkins']
 16734
+>>> # We can see what effect this has had by inspecting the object again:
 >>> me['hometown']
 {u'category': u'City', u'likes': 146053, '__fetched__': True, u'talking_about_count': 115999, u'name': u'Dublin, Ireland', u'link': u'http://www.facebook.com/pages/Dublin-Ireland/110769888951990', u'location': {u'latitude': 53.344037395687, u'longitude': -6.2632156999178}, u'is_community_page': True, u'checkins': 16734, u'id': u'110769888951990', u'is_published': True, u'description': u'<p><b>Dublin</b> is the capital and most populous city of ........'}
 >>>
+>>> # Another example - 'significant_other' also points to, of course, another facebook node:
+>>> me['significant_other']['hometown']['checkins']
+222
+>>>
+>>> # Your newsfeed can be parsed and inspected:
 >>> newsfeed = c.get('/me/home')
 >>> type(newsfeed)
 <type 'dict'>
 >>> type(newsfeed['data'])
 <type 'list'>
 >>>
->>> me['significant_other']
-{'__fetched__': False, u'name': u'Patricia Korcz', u'id': u'100000XXXXXXXXX'}
->>> me['significant_other']['hometown']['checkins']
-222
->>>
+>>> # Using facebewk, you can also create and alter data on the graph:
 >>> status_update = c.post(me, {'message': 'writing my blog post innit', 
 ...     'privacy': {'value': 'CUSTOM', 'networks': 1, 'friends': 'NO_FRIENDS'}})
 >>> status_update
